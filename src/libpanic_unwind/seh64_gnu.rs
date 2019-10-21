@@ -117,7 +117,7 @@ unsafe fn find_landing_pad(dc: &c::DISPATCHER_CONTEXT) -> Option<usize> {
         get_text_start: &|| dc.ImageBase as usize,
         get_data_start: &|| unimplemented!(),
     };
-    match find_eh_action(dc.HandlerData, &eh_ctx) {
+    match find_eh_action(dc.HandlerData, &eh_ctx, false) {
         Err(_) |
         Ok(EHAction::None) => None,
         Ok(EHAction::Cleanup(lpad)) |

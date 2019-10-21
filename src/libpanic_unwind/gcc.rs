@@ -149,7 +149,8 @@ unsafe extern "C" fn rust_eh_personality(version: c_int,
     if version != 1 {
         return uw::_URC_FATAL_PHASE1_ERROR;
     }
-    let eh_action = match find_eh_action(context) {
+    let foreign_exception = exception_class != rust_exception_class();
+    let eh_action = match find_eh_action(context, foreign_exception) {
         Ok(action) => action,
         Err(_) => return uw::_URC_FATAL_PHASE1_ERROR,
     };
@@ -215,7 +216,9 @@ unsafe extern "C" fn rust_eh_personality(state: uw::_Unwind_State,
     // _Unwind_Context in our libunwind bindings and fetch the required data from there directly,
     // bypassing DWARF compatibility functions.
 
-    let eh_action = match find_eh_action(context) {
+    let exception_class = unsafe { (*exception_object).exception_class };
+    let foreign_exception = exception_class != rust_exception_class();
+    let eh_action = match find_eh_action(context, foreign_exception) {
         Ok(action) => action,
         Err(_) => return uw::_URC_FAILURE,
     };
@@ -259,7 +262,7 @@ unsafe extern "C" fn rust_eh_personality(state: uw::_Unwind_State,
     }
 }
 
-unsafe fn find_eh_action(context: *mut uw::_Unwind_Context)
+unsafe fn find_eh_action(context: *mut uw::_Unwind_Context, foreign_exception: bool)
     -> Result<EHAction, ()>
 {
     let lsda = uw::_Unwind_GetLanguageSpecificData(context) as *const u8;
@@ -273,7 +276,7 @@ unsafe fn find_eh_action(context: *mut uw::_Unwind_Context)
         get_text_start: &|| uw::_Unwind_GetTextRelBase(context),
         get_data_start: &|| uw::_Unwind_GetDataRelBase(context),
     };
-    eh::find_eh_action(lsda, &eh_context)
+    eh::find_eh_action(lsda, &eh_context, foreign_exception)
 }
 
 // See docs in the `unwind` module.
