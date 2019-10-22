@@ -49,6 +49,7 @@ fn throw_rust_panic() {
     assert!(dropped);
     assert!(caught_unwind);
     assert!(cxx_ok);
+    println!("caught rust panic");
 }
 
 fn main() {
